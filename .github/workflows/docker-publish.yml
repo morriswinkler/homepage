@@ -3,12 +3,6 @@ name: Docker CI
 on:
   schedule:
     - cron: "20 0 * * *"
-  workflow_dispatch:
-    inputs:
-      manual_tag:
-        description: Optional Docker tag to publish (for example feature-xyz or rc-1)
-        required: false
-        type: string
   push:
     branches:
       - main
@@ -22,9 +16,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag to build'
+        description: "Tag to build"
         required: true
-        default: 'manual-build'
+        default: "manual-build"
 
 env:
   IMAGE_NAME: ${{ github.repository }}
