@@ -15,8 +15,8 @@ on:
   merge_group:
   workflow_dispatch:
     inputs:
-      tag_name:
-        description: "Tag to build"
+      manual_tag:
+        description: "Docker tag to publish"
         required: true
         default: "manual-build"
 
