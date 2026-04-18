@@ -61,7 +61,7 @@ export async function getStaticProps() {
     let reqHeaders = {};
     if (settings.groupFilterHeader && typeof settings.groupFilterHeader === "string") {
       // pass empty groupFilterHeader to prevent loading all groups
-      reqHeaders[settings.groupFilterHeader] = "";
+      reqHeaders[settings.groupFilterHeader] = true;
     }
 
     const services = await servicesResponse(reqHeaders);
