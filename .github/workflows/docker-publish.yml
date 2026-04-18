@@ -2,30 +2,28 @@ name: Docker CI
 
 on:
   schedule:
-    - cron: '20 0 * * *'
+    - cron: "20 0 * * *"
   push:
     branches:
       - main
       - feature/**
       - fix/**
       - dev
-    tags: [ 'v*.*.*' ]
+    tags: ["v*.*.*"]
   pull_request:
-    branches: [ "dev" ]
+    branches: ["dev"]
   merge_group:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag to build'
+        description: "Tag to build"
         required: true
-        default: 'manual-build'
+        default: "manual-build"
 
 env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-
-
   build:
     name: Docker Build & Push
     if: github.repository == 'morriswinkler/homepage'
@@ -50,6 +48,7 @@ jobs:
             type=schedule,pattern=nightly
             type=ref,event=branch
             type=ref,event=tag
+            type=raw,value=${{ github.event.inputs.manual_tag }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.manual_tag != '' }}
             # Versioning tags
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
@@ -75,7 +74,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: 24
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
