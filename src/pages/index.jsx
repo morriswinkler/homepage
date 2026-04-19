@@ -52,6 +52,10 @@ const normalizeLanguage = (language) => {
   return alias || language;
 };
 
+const groupFilterEnabled = (settings) => {
+  return settings.groupFilterHeader && typeof settings.groupFilterHeader === "string";
+};
+
 export async function getStaticProps() {
   let logger;
   try {
@@ -59,9 +63,9 @@ export async function getStaticProps() {
     const { providers, ...settings } = getSettings();
 
     let reqHeaders = {};
-    if (settings.groupFilterHeader && typeof settings.groupFilterHeader === "string") {
+    if (groupFilterEnabled(settings)) {
       // pass empty groupFilterHeader to prevent loading all groups
-      reqHeaders[settings.groupFilterHeader] = "";
+      reqHeaders[settings.groupFilterHeader] = true;
     }
 
     const services = await servicesResponse(reqHeaders);
@@ -215,6 +219,18 @@ function getAllServices(services) {
   return [...services.map(getServices).flat()];
 }
 
+function getAllGroups(services) {
+  function getGroups(group) {
+    let nestedGroups = [group.name];
+    if (group.groups.length > 0) {
+      nestedGroups = [...nestedGroups, ...group.groups.map(getGroups).flat()];
+    }
+    return nestedGroups;
+  }
+
+  return [...services.map(getGroups).flat()];
+}
+
 function Home({ initialSettings }) {
   const { i18n } = useTranslation();
   const { theme, setTheme } = useContext(ThemeContext);
@@ -280,16 +296,29 @@ function Home({ initialSettings }) {
     };
   });
 
-  const tabs = useMemo(
-    () => [
+  const tabs = useMemo(() => {
+    if (groupFilterEnabled(settings)) {
+      if (services.length === 0) {
+        return [];
+      }
+      const filteredGroups = getAllGroups(services);
+      return [
+        ...new Set(
+          Object.keys(settings.layout ?? {})
+            .filter((groupName) => filteredGroups.includes(groupName))
+            .map((groupName) => settings.layout[groupName]?.tab?.toString())
+            .filter((group) => group),
+        ),
+      ];
+    }
+    return [
       ...new Set(
         Object.keys(settings.layout ?? {})
           .map((groupName) => settings.layout[groupName]?.tab?.toString())
           .filter((group) => group),
       ),
-    ],
-    [settings.layout],
-  );
+    ];
+  }, [settings.layout, services]);
 
   useEffect(() => {
     if (!activeTab) {

@@ -269,6 +269,9 @@ export async function servicesResponse(reqHeaders) {
         : "|";
       const parsedGroupFilter = groupFilter.split(definedGroupFilterDelimiter);
       allGroups = filterGroupByNames(allGroups, parsedGroupFilter);
+    } else if (groupFilter && typeof groupFilter === "boolean") {
+      // groupFilter was set on the index page
+      allGroups = [];
     }
   }
 
