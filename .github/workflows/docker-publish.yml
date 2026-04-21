@@ -2,27 +2,35 @@ name: Docker CI
 
 on:
   schedule:
-    - cron: '20 0 * * *'
+    - cron: "20 0 * * *"
   push:
     branches:
       - main
       - feature/**
       - fix/**
       - dev
-    tags: [ 'v*.*.*' ]
+    tags: ["v*.*.*"]
   pull_request:
-    branches: [ "dev" ]
+    branches: ["dev"]
   merge_group:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Branch/ref to build (for example feature/my-change). Leave empty to use the selected Run workflow branch"
+        required: false
+        default: ""
+      manual_tag:
+        description: "Docker tag to publish"
+        required: true
+        default: "manual-build"
 
 env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-
-
   build:
     name: Docker Build & Push
-    if: github.repository == 'gethomepage/homepage'
+    if: github.repository == 'morriswinkler/homepage'
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -32,19 +40,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.source_ref != '' && github.event.inputs.source_ref || github.ref_name }}
 
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
         with:
           images: |
-            ${{ env.IMAGE_NAME }}
             ghcr.io/${{ env.IMAGE_NAME }}
           tags: |
             # Default tags
             type=schedule,pattern=nightly
-            type=ref,event=branch
+            type=ref,event=branch,enable=${{ github.event_name != 'workflow_dispatch' }}
             type=ref,event=tag
+            type=raw,value=${{ github.event.inputs.manual_tag }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.manual_tag != '' }}
             # Versioning tags
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
@@ -70,7 +80,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: 24
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -89,13 +99,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Login to Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
