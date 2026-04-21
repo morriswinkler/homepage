@@ -1,9 +1,10 @@
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from "@headlessui/react";
 import { useTranslation } from "next-i18next";
-import { Fragment } from "react";
-import { HiChevronDown, HiUserCircle } from "react-icons/hi"; // Example icon
+import { Fragment, useCallback } from "react";
+import { HiChevronDown, HiUserCircle } from "react-icons/hi";
 import useSWR from "swr";
 import Container from "../widget/container";
+import ContainerButton from "../widget/container_button";
 import Error from "../widget/error";
 import PrimaryText from "../widget/primary_text";
 import Raw from "../widget/raw";
@@ -143,9 +144,23 @@ function UserMenu({ username, email, groups, actions }) {
 export default function ForwardAuthUser({ options }) {
   const { t } = useTranslation();
 
+  const requestReload = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, []);
+
   const { data, error } = useSWR("/api/widgets/forward_auth_user");
 
   if (error || data?.error) {
+    if (options.showLoginOnError) {
+      return (
+        <ContainerButton options={options} callback={requestReload}>
+          <PrimaryText>Login</PrimaryText>
+          <WidgetIcon icon={HiUserCircle} size="l" pulse />
+        </ContainerButton>
+      );
+    }
     return <Error options={options} />;
   }
 

@@ -1,4 +1,5 @@
 import { getWidgetOptions } from "utils/config/widget-helpers";
+
 import createLogger from "../../../utils/logger";
 
 const logger = createLogger("forward_auth_user");
